@@ -7,3 +7,4 @@ __pycache__/
 outputs/
 lora_adapters/
 merged_16bit/
+logs/
