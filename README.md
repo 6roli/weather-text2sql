@@ -98,6 +98,22 @@ Most remaining errors are paraphrases of forecast-skill questions and past-vs-fu
 templates would likely fix them, but the hand-written set would then no longer be unseen: a new hand-written set
 is needed before claiming a better score.
 
+### Browser version (ONNX q4f16)
+
+[convert_web.ipynb](notebooks/convert_web.ipynb) turns the merged 1.5B model into ONNX with 4-bit weights and fp16
+activations (1.34 GB), the format transformers.js runs with WebGPU, and scores it on the same 40 hand-written questions
+([summary](results/qwen2.5-coder-1.5b/onnx_q4f16_summary.json)):
+
+| | PyTorch | ONNX q4f16 |
+|---|---|---|
+| Hand-written questions | **87.5%** | **75.0%** |
+| Valid SQL | 100% | 92.5% |
+| Same SQL as PyTorch | — | 26 of 40 |
+
+The 4 bits cost 5 questions and fix none. The lost ones drop a detail rather than misread the question: a missing
+`precipitation_mm > 0` or "tomorrow" filter, a missing `DISTINCT`, `>=` instead of `>` for "the last 7 days", one total
+instead of one row per day. Keeping the output layer in fp16 or asymmetric 4-bit blocks may recover some of them.
+
 ## Run locally
 
 Dataset and evaluation run on any PC (no GPU needed):
@@ -124,10 +140,16 @@ python -m text2sql.evaluate results/finetuned_handwritten.jsonl   # score a pred
 2. Settings: **Accelerator: GPU T4 x2**, **Internet: on** (needs a phone-verified Kaggle account).
 3. **Run all.** Results land in `results/` (summary + every prediction); download them from the Output tab.
 
+Converting for the browser: import `notebooks/convert_web.ipynb` the same way, attach the `HF_TOKEN` secret (write),
+choose `SOURCE_REPO` and run all. It uploads `onnx/model_q4f16.onnx` to the model repository only when the converted
+model scores at most `MAX_DROP` below PyTorch. The training environment saves the model with transformers 5 and the
+exporter needs transformers 4, so the notebook rewrites two settings first (`extra_special_tokens`, `rope_theta`);
+without the `rope_theta` fix the export silently uses the wrong positions and scores 30%.
+
 ## Next steps
 
-- Browser demo: question → model (WebGPU, transformers.js/WebLLM) → SQL → DuckDB-WASM over the live bucket, no server.
-- Try a smaller model (Qwen2.5-Coder-0.5B) for faster in-browser inference, and compare accuracy.
+- Browser demo: question → model (WebGPU, transformers.js) → SQL → DuckDB-WASM over the live bucket, no server.
+- Recover the accuracy lost in the 4-bit conversion (fp16 output layer, asymmetric blocks), comparing variants.
 
 ## Licence
 

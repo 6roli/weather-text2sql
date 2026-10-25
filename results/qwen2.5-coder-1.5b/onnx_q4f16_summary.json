@@ -1,0 +1,7 @@
+{
+  "examples": 40,
+  "execution_accuracy": 0.75,
+  "valid_sql": 0.925,
+  "pytorch_accuracy": 0.875,
+  "identical_to_pytorch": "26/40"
+}
