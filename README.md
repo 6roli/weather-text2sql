@@ -46,7 +46,37 @@ whether the model generalises rather than recognising templates.
 
 ## Results
 
-*Pending the first training run.*
+Qwen2.5-Coder-1.5B-Instruct, same prompt before and after fine-tuning
+([results/summary.json](results/summary.json), every prediction in [results/](results/)):
+
+| Evaluation set | Base model | Fine-tuned | Valid SQL (base → fine-tuned) |
+|---|---|---|---|
+| **40 hand-written questions** (wording the templates never produce) | 7.5% | **87.5%** | 30% → 100% |
+| Generated test split (343, held-out queries) | 5.5% | 100% | 24% → 100% |
+
+Training: 2 epochs, 356 steps, 51 min on a free Kaggle T4, 18.5M trainable parameters (1.2% of the model).
+Training loss fell from 0.52 to ~0.002; validation loss from 0.028 (step 50) to 0.0011, flat from step 300 — no
+sign of overfitting on the generated distribution. A first run (outputs lost) scored 85% on the hand-written set:
+one question can change between runs.
+
+**What the base model gets wrong.** It knows SQL but not this warehouse: it invents columns (`temperature_max_c` in
+the forecast table, `location_name` in `daily_summary`), joins three tables where one is enough (benchmark-style
+`T1/T2/T3` aliases), reads tomorrow's forecast from the table of observations, and ignores "Today" in the prompt
+(`NOW()`, `CURRENT_DATE`, MySQL's `DATE_SUB`).
+
+**What the fine-tuned model still gets wrong** (5 of 40, all valid SQL):
+
+| Question | What it did |
+|---|---|
+| ¿La previsión de temperatura en Madrid suele quedarse corta o pasarse? | Average forecast temperature instead of the forecast bias — colloquial wording |
+| ¿Cuánto empeora la previsión de viento en Cádiz según la antelación, ayer? | One lead-time band instead of the error per lead time |
+| Máximas diarias en Toledo desde el 20 de octubre | Read past days from the forecast table instead of `daily_summary` |
+| Barcelona vs Valencia: ¿cuál tendrá la máxima más alta mañana? | One maximum for both cities, so the answer can't say which |
+| Las 5 capitales donde peor se ha previsto la temperatura en los últimos 5 días | Ranked by `daily_summary`'s error bands instead of `forecast_vs_observed` — a defensible reading, scored wrong |
+
+Most remaining errors are paraphrases of forecast-skill questions and past-vs-future confusion. More varied
+templates would likely fix them, but the hand-written set would then no longer be unseen: a new hand-written set
+is needed before claiming a better score.
 
 ## Run locally
 
