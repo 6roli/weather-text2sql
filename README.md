@@ -47,7 +47,8 @@ whether the model generalises rather than recognising templates.
 ## Results
 
 Qwen2.5-Coder-1.5B-Instruct, same prompt before and after fine-tuning
-([results/summary.json](results/summary.json), every prediction in [results/](results/)):
+([summary](results/qwen2.5-coder-1.5b/summary.json), every prediction in
+[results/qwen2.5-coder-1.5b/](results/qwen2.5-coder-1.5b/)):
 
 | Evaluation set | Base model | Fine-tuned | Valid SQL (base → fine-tuned) |
 |---|---|---|---|
@@ -58,6 +59,25 @@ Training: 2 epochs, 356 steps, 51 min on a free Kaggle T4, 18.5M trainable param
 Training loss fell from 0.52 to ~0.002; validation loss from 0.028 (step 50) to 0.0011, flat from step 300 — no
 sign of overfitting on the generated distribution. A first run (outputs lost) scored 85% on the hand-written set:
 one question can change between runs.
+
+### 1.5B vs 0.5B
+
+The same notebook and data with Qwen2.5-Coder-**0.5B**-Instruct
+([results/qwen2.5-coder-0.5b/](results/qwen2.5-coder-0.5b/)), to see whether a model ~3x smaller — a much lighter
+download for the browser — is good enough:
+
+| | 1.5B | 0.5B |
+|---|---|---|
+| Hand-written questions, fine-tuned (base) | **87.5%** (7.5%) | 75.0% (0%) |
+| Generated test split, fine-tuned (base) | 100% (5.5%) | 98.5% (1.2%) |
+| Valid SQL on hand-written questions | 100% | 97.5% |
+| Training on a Kaggle T4 | 51 min | 17 min |
+| Trainable parameters | 18.5M of 1.56B (1.2%) | 8.8M of 503M (1.75%) |
+
+The 0.5B model fails 6 questions the 1.5B answers, and its errors are the dangerous kind — valid SQL, wrong answer:
+"más de 15 grados" became `temperature_c < 15`; "ayer" became two days ago; last week's rain was read from the
+forecast table; the 24-hour error came from a daily band. It fixes one question the 1.5B gets wrong (daily maxima
+since a past date). **The 1.5B model is the default for the demo**; the 0.5B stays available as a lighter option.
 
 **What the base model gets wrong.** It knows SQL but not this warehouse: it invents columns (`temperature_max_c` in
 the forecast table, `location_name` in `daily_summary`), joins three tables where one is enough (benchmark-style
