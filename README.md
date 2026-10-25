@@ -96,6 +96,21 @@ One-time setup:
 Kaggle is used instead of Google Colab because a committed run continues with the browser closed, keeps its outputs,
 and the weekly GPU quota is fixed.
 
+## Converting for the browser
+
+[notebooks/convert_web.ipynb](notebooks/convert_web.ipynb) turns the merged model on the Hub into ONNX with 4-bit
+weights and fp16 activations (`q4f16`), the format transformers.js runs with WebGPU, and uploads it to the same
+repository under `onnx/`. Import it in Kaggle like the training notebook (same `HF_TOKEN` secret, GPU on), set
+`SOURCE_REPO` to the model to convert and **Save & Run All** (~20–30 min).
+
+- The exporter needs an older `transformers` than Kaggle ships, so it runs in its own Python 3.11 environment.
+- Recipe: 4-bit matrix multiplications first (the fp32 export is too large to convert in one piece), then fp16 with
+  ONNX Runtime's converter (`onnxconverter_common` leaves Qwen's RMSNorm with mixed fp32/fp16 types).
+- Before uploading, the converted model answers the 40 hand-written questions again with ONNX Runtime and is scored
+  with the same evaluation, so accuracy lost by the compression is measured, not assumed
+  (`results/onnx_q4f16_summary.json`).
+- Size: 475 MB for the 0.5B model (tested end to end); the 1.5B model is about 2.5x larger.
+
 ## Next steps
 
 - Browser demo: question → model (WebGPU, transformers.js/WebLLM) → SQL → DuckDB-WASM over the live bucket, no server.
