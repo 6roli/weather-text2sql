@@ -64,7 +64,9 @@ from optimum.exporters.onnx import main_export
 
 src = snapshot_download(os.environ["SOURCE_REPO"], token=os.environ["HF_TOKEN"], local_dir="model_src",
                         ignore_patterns=["lora_adapters/*", "results/*", "onnx/*"])
-main_export(src, output="onnx_fp32", task="text-generation-with-past", device="cpu")
+# no_post_process: the tied-weights clean-up serialises the whole fp32 model, which fails above 2 GB (1.5B is ~6 GB);
+# it isn't needed, the duplicated output matrix is compressed to 4 bits in the next step
+main_export(src, output="onnx_fp32", task="text-generation-with-past", device="cpu", no_post_process=True)
 print(sorted(os.listdir("onnx_fp32")))
 ''')
 
