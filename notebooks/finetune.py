@@ -11,7 +11,11 @@
 
 # %%
 import os
+import shutil
+import subprocess
 
+if not shutil.which("nvidia-smi") or subprocess.run(["nvidia-smi"], capture_output=True).returncode != 0:
+    raise SystemExit("No GPU in this session: Settings → Accelerator → GPU T4 x2 (needs a phone-verified account), then run again from the top.")
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Unsloth trains on one GPU
 
 # %%
