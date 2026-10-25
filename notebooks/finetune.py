@@ -16,7 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Unsloth trains on one GPU
 
 # %%
 # !pip install -q unsloth duckdb==1.5.6
-# !git clone -q https://github.com/6roli/weather-text2sql.git
+# !if [ -d weather-text2sql ]; then git -C weather-text2sql pull -q; else git clone -q https://github.com/6roli/weather-text2sql.git; fi
 
 # %%
 import sys
