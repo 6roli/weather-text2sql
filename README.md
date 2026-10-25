@@ -70,8 +70,13 @@ python -m text2sql.evaluate results/finetuned_handwritten.jsonl   # score a pred
 
 ## Training on Kaggle
 
-One-time setup: a Kaggle account with a **verified phone number** (Settings → Phone verification); without it the
-GPU and internet options are disabled.
+One-time setup:
+- a Kaggle account with a **verified phone number** (Settings → Phone verification); without it the GPU and
+  internet options are disabled;
+- a Hugging Face **write token** (huggingface.co/settings/tokens) saved in the notebook as a secret named
+  `HF_TOKEN` (**Add-ons → Secrets**). The last cell then uploads the model, the LoRA adapters and `results/` to
+  `groli/weather-text2sql-qwen2.5-coder-1.5b` (private until the demo needs it). Without it, download
+  `results.zip` and `merged_16bit/` from the Output panel — files in an interactive session are deleted when it ends.
 
 1. **Create → New Notebook → File → Import Notebook**, and paste
    `https://raw.githubusercontent.com/6roli/weather-text2sql/main/notebooks/finetune.ipynb`.
