@@ -70,9 +70,26 @@ python -m text2sql.evaluate results/finetuned_handwritten.jsonl   # score a pred
 
 ## Training on Kaggle
 
-1. Kaggle → **Create → New Notebook → File → Import notebook** → `notebooks/finetune.ipynb`.
-2. Settings: **Accelerator: GPU T4 x2**, **Internet: on** (needs a phone-verified Kaggle account).
-3. **Run all.** Results land in `results/` (summary + every prediction); download them from the Output tab.
+One-time setup: a Kaggle account with a **verified phone number** (Settings → Phone verification); without it the
+GPU and internet options are disabled.
+
+1. **Create → New Notebook → File → Import Notebook**, and paste
+   `https://raw.githubusercontent.com/6roli/weather-text2sql/main/notebooks/finetune.ipynb`.
+2. Session options: **Accelerator → GPU T4 x2** (one is used) and **Internet → On**.
+3. Run the first code cell: it stops with a clear message if the session has no GPU.
+4. **Save Version → Save & Run All (Commit)**. It runs in the background (~45–60 min); the browser can be closed.
+   Stop the interactive session so it doesn't use GPU quota (~30 h/week free) in parallel.
+5. Open the finished version → **Output** → download `results/` (summary + every prediction) into this repository.
+
+| Problem | Fix |
+|---|---|
+| `Unsloth cannot find any torch accelerator? You need a GPU.` | The GPU is not enabled (step 2); changing it restarts the session, run again from the top |
+| `No module named 'text2sql'` | Internet was off, so the repository was not cloned |
+| `CUDA out of memory` | `BATCH_SIZE = 4`, `GRAD_ACCUMULATION = 4` in the Settings cell |
+| Red `FutureWarning` / "unauthenticated requests to the HF Hub" | Harmless warnings |
+
+Kaggle is used instead of Google Colab because a committed run continues with the browser closed, keeps its outputs,
+and the weekly GPU quota is fixed.
 
 ## Next steps
 
