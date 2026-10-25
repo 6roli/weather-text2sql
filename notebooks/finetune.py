@@ -1,7 +1,7 @@
 # %% [markdown]
 # # Fine-tuning a small LLM for weather text-to-SQL
 #
-# QLoRA fine-tuning of **Qwen2.5-Coder-1.5B-Instruct** (Apache 2.0) with [Unsloth](https://github.com/unslothai/unsloth),
+# QLoRA fine-tuning of **Qwen2.5-Coder-1.5B-Instruct** or **0.5B-Instruct** (both Apache 2.0) with [Unsloth](https://github.com/unslothai/unsloth),
 # on a free Kaggle GPU (T4). The model learns to answer questions about Spain's weather warehouse with one DuckDB query.
 #
 # The notebook measures the base model first (baseline) and the fine-tuned model afterwards, with the same prompt and the
@@ -32,6 +32,8 @@ sys.path.insert(0, REPO)
 # ## Settings
 
 # %%
+# 1.5B: best accuracy · 0.5B: ~2.5x smaller download for the browser demo ("unsloth/Qwen2.5-Coder-0.5B-Instruct").
+# Avoid 3B: its licence is not Apache 2.0.
 BASE_MODEL = "unsloth/Qwen2.5-Coder-1.5B-Instruct"
 MAX_SEQ_LENGTH = 2048
 LORA_RANK = 16
@@ -40,8 +42,10 @@ LEARNING_RATE = 2e-4
 BATCH_SIZE = 8
 GRAD_ACCUMULATION = 2
 OUTPUT_DIR = "outputs"
-PUSH_TO_HUB = False  # needs a Kaggle secret HF_TOKEN with write access
-HUB_REPO = "groli/weather-text2sql-qwen2.5-coder-1.5b"
+PUSH_TO_HUB = True  # uses the Kaggle secret HF_TOKEN (write access) if it exists
+# one Hub repository per base model, e.g. groli/weather-text2sql-qwen2.5-coder-1.5b
+HUB_REPO = "groli/weather-text2sql-" + BASE_MODEL.split("/")[-1].lower().removesuffix("-instruct")
+HUB_PRIVATE = True  # made public later, when the browser demo needs to download it
 
 # %% [markdown]
 # ## Data
@@ -162,7 +166,7 @@ trainer = SFTTrainer(
         num_train_epochs=EPOCHS,
         learning_rate=LEARNING_RATE,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.05,
+        warmup_steps=round(0.05 * EPOCHS * len(train_rows) / (BATCH_SIZE * GRAD_ACCUMULATION)),  # 5% of the steps
         weight_decay=0.01,
         optim="adamw_8bit",
         fp16=not is_bfloat16_supported(),
@@ -216,16 +220,32 @@ ask("¿Dónde hará más calor mañana?")
 # %% [markdown]
 # ## Save
 #
-# LoRA adapters (a few MB) and a merged 16-bit model (for conversion to browser/ONNX or GGUF formats later).
-# Download them from the notebook's Output tab, or push them to the Hugging Face Hub.
+# LoRA adapters (~70 MB) and a merged 16-bit model (for conversion to browser/ONNX or GGUF formats later).
+# They are uploaded to the Hugging Face Hub (private) when the Kaggle secret HF_TOKEN exists; otherwise download
+# results.zip and merged_16bit from the Output panel before the session ends.
 
 # %%
 model.save_pretrained("lora_adapters")
 tokenizer.save_pretrained("lora_adapters")
 model.save_pretrained_merged("merged_16bit", tokenizer, save_method="merged_16bit")
 
+# !zip -r -q results.zip results
+
 if PUSH_TO_HUB:
+    # Files in /kaggle/working disappear with an interactive session; the Hub keeps them.
+    from huggingface_hub import HfApi
     from kaggle_secrets import UserSecretsClient
 
-    token = UserSecretsClient().get_secret("HF_TOKEN")
-    model.push_to_hub_merged(HUB_REPO, tokenizer, save_method="merged_16bit", token=token)
+    try:
+        token = UserSecretsClient().get_secret("HF_TOKEN")
+    except Exception:
+        token = None
+    if token:
+        api = HfApi(token=token)
+        api.create_repo(HUB_REPO, private=HUB_PRIVATE, exist_ok=True)
+        api.upload_folder(folder_path="merged_16bit", repo_id=HUB_REPO)
+        api.upload_folder(folder_path="lora_adapters", repo_id=HUB_REPO, path_in_repo="lora_adapters")
+        api.upload_folder(folder_path="results", repo_id=HUB_REPO, path_in_repo="results")
+        print(f"uploaded to https://huggingface.co/{HUB_REPO} ({'private' if HUB_PRIVATE else 'public'})")
+    else:
+        print("No HF_TOKEN secret (Add-ons → Secrets): download results.zip and merged_16bit from the Output panel instead.")

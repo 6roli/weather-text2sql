@@ -1,6 +1,6 @@
-"""Turns notebooks/finetune.py (cells separated by `# %%`) into notebooks/finetune.ipynb for Kaggle.
+"""Turns each notebooks/<name>.py (cells separated by `# %%`) into notebooks/<name>.ipynb for Kaggle.
 
-The .py file is the one to edit (readable diffs); run `python notebooks/build_notebook.py` afterwards.
+The .py files are the ones to edit (readable diffs); run `python notebooks/build_notebook.py` afterwards.
 Lines like `# !pip install ...` become real `!pip install ...` shell lines in the notebook.
 """
 import json
@@ -20,9 +20,9 @@ def cells(source: str):
             yield {"cell_type": "code", "metadata": {}, "execution_count": None, "outputs": [], "source": code}
 
 
-def main() -> None:
+def build(source: Path) -> None:
     notebook = {
-        "cells": list(cells((HERE / "finetune.py").read_text(encoding="utf-8"))),
+        "cells": list(cells(source.read_text(encoding="utf-8"))),
         "metadata": {
             "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
             "language_info": {"name": "python"},
@@ -31,7 +31,13 @@ def main() -> None:
         "nbformat": 4,
         "nbformat_minor": 5,
     }
-    (HERE / "finetune.ipynb").write_text(json.dumps(notebook, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    source.with_suffix(".ipynb").write_text(json.dumps(notebook, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def main() -> None:
+    for source in sorted(HERE.glob("*.py")):
+        if source.name != Path(__file__).name:
+            build(source)
 
 
 if __name__ == "__main__":
