@@ -1,0 +1,21 @@
+[project]
+name = "weather-text2sql"
+version = "0.1.0"
+description = "Fine-tuning a small open LLM to turn weather questions into DuckDB SQL over the weather warehouse."
+readme = "README.md"
+requires-python = ">=3.11"
+# Dataset generation and evaluation only; training dependencies are installed in the Kaggle notebook.
+dependencies = ["duckdb==1.5.6"]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["text2sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

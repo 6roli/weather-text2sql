@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+# training outputs (download from Kaggle; only results/ summaries are committed)
+outputs/
+lora_adapters/
+merged_16bit/
