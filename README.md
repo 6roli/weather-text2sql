@@ -117,6 +117,28 @@ python -m text2sql.evaluate results/finetuned_handwritten.jsonl   # score a pred
 | `python -m text2sql.generate` | Build train/val/test and validate the hand-written set |
 | `python -m text2sql.evaluate FILE` | Execution accuracy of a predictions JSONL, with the wrong answers |
 | `python notebooks/build_notebook.py` | Rebuild `finetune.ipynb` from `finetune.py` (edit the `.py`) |
+| `python -m text2sql.playground` | Local web app to inspect the model (see below) |
+
+### Playground
+
+A Gradio app to see where the model goes wrong before publishing a demo:
+
+- **Hand-written errors**: the 40 hand-written questions with the saved predictions of the PyTorch model and of
+  the browser model (ONNX q4f16), filterable by "web fails" / "PyTorch fails" / "models disagree". For each one:
+  the reference query, both predictions, a word diff against the reference, and what every query returns on the
+  snapshot. No model is loaded for this tab.
+- **Ask**: type any question; both models run on your CPU and their queries are executed on the snapshot.
+  An optional reference query marks each answer right or wrong.
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[playground]"
+python -m text2sql.playground    # opens http://127.0.0.1:7860
+```
+
+The first question downloads both models from Hugging Face (~3 GB + ~1.2 GB, cached afterwards). The PyTorch model
+runs in float32 and needs ~7 GB of free RAM; with 16 GB both fit. Locally generated SQL can differ slightly from
+the saved predictions (Kaggle GPU in 16-bit vs CPU in 32-bit).
 
 ## Training on Kaggle
 

@@ -9,6 +9,8 @@ dependencies = ["duckdb==1.5.6"]
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1"]
+# local playground (python -m text2sql.playground); install torch first from https://download.pytorch.org/whl/cpu
+playground = ["gradio==6.31.0", "transformers==5.22.1", "onnxruntime==1.31.1", "huggingface_hub==2.4.0"]
 
 [build-system]
 requires = ["setuptools>=69"]
